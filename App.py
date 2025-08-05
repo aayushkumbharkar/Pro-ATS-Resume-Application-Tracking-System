@@ -2,7 +2,7 @@ import streamlit as st
 import google.generativeai as genai
 from dotenv import load_dotenv
 import PyPDF2 as pdf
-from huggingface_hub import upload_file
+#from huggingface_hub import upload_file
 import os
 #from notdiamond.settings import GOOGLE_API_KEY
 import json
@@ -63,3 +63,4 @@ if submit:
         final_prompt = input_prompt.format(text=text, jd=jd)
         response = get_gemini_response(final_prompt)
         st.subheader(response)
+
