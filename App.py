@@ -15,7 +15,7 @@ genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 ## Gemini Pro Response
 
 def get_gemini_response(input_text):
-    model = genai.GenerativeModel('models/gemini-2.5- pro')  # ✅ Correct full model path
+    model = genai.GenerativeModel('models/gemini-2.5-pro')  # ✅ Correct full model path
     response = model.generate_content(input_text)
     return response.text
 
@@ -63,4 +63,5 @@ if submit:
         final_prompt = input_prompt.format(text=text, jd=jd)
         response = get_gemini_response(final_prompt)
         st.subheader(response)
+
 
