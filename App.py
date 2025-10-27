@@ -2,32 +2,55 @@ import streamlit as st
 import google.generativeai as genai
 from dotenv import load_dotenv
 import PyPDF2 as pdf
-#from huggingface_hub import upload_file
 import os
-#from notdiamond.settings import GOOGLE_API_KEY
-import json
+import time
+from google.api_core.exceptions import ResourceExhausted
 
-load_dotenv() #load all the environment variable
-
-#genai.configure(api_key=os.getenv(GOOGLE_API_KEY))
+# Load environment variables
+load_dotenv()
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
-## Gemini Pro Response
-
+# -------------------------------
+# Gemini Response Function
+# -------------------------------
+@st.cache_data
 def get_gemini_response(input_text):
-    model = genai.GenerativeModel('models/gemini-2.5-pro')  # ✅ Correct full model path
-    response = model.generate_content(input_text)
-    return response.text
+    model_pro = genai.GenerativeModel('models/gemini-2.5-pro')
+    model_flash = genai.GenerativeModel('models/gemini-1.5-flash')
 
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            response = model_pro.generate_content(input_text)
+            return response.text
+        except ResourceExhausted:
+            st.warning("⚠️ Gemini Pro quota exceeded. Retrying in 5 seconds...")
+            time.sleep(5)
+        except Exception as e:
+            if "quota" in str(e).lower():
+                st.warning("⚠️ Gemini Pro quota reached — switching to Gemini Flash.")
+                response = model_flash.generate_content(input_text)
+                return response.text
+            else:
+                st.error(f"Unexpected error: {e}")
+                return "⚠️ Error occurred while generating response."
+
+    st.error("⚠️ Gemini API quota exceeded multiple times. Try again later or upgrade your plan.")
+    return "Quota limit reached. Please wait a bit before retrying."
+
+# -------------------------------
+# PDF Text Extraction
+# -------------------------------
 def input_pdf_text(uploaded_file):
-    reader=pdf.PdfReader(uploaded_file)
-    text=""
-    for page in range(len(reader.pages)):
-        page=reader.pages[page]
-        text+=str(page.extract_text())
+    reader = pdf.PdfReader(uploaded_file)
+    text = ""
+    for page in reader.pages:
+        text += str(page.extract_text())
     return text
 
-#Prompt Template
+# -------------------------------
+# Prompt Template
+# -------------------------------
 input_prompt = """
 Act like a highly experienced Applicant Tracking System (ATS) with deep domain knowledge of software engineering, data science, data analytics, and big data roles.
 
@@ -47,21 +70,26 @@ Job Description:
 {jd}
 """
 
+# -------------------------------
+# Streamlit UI
+# -------------------------------
+st.title("🧠 Pro ATS — Resume Evaluator")
+st.caption("Enhance your resume using AI-powered Applicant Tracking insights")
 
+jd = st.text_area("📄 Paste the Job Description here")
+uploaded_file = st.file_uploader("📎 Upload Your Resume (PDF only)", type="pdf")
+submit = st.button("🚀 Submit for Evaluation")
 
-## streamlit app
-st.title("Pro ATS")
-st.text("Improve Your Resume ATS")
-jd=st.text_area("Paste the Job Description")
-uploaded_file=st.file_uploader("Upload Your Resume",type="pdf",help="Please uplaod the pdf")
-submit = st.button("Submit")
-
-
+# -------------------------------
+# Main Logic
+# -------------------------------
 if submit:
-    if uploaded_file is not None:
-        text = input_pdf_text(uploaded_file)
-        final_prompt = input_prompt.format(text=text, jd=jd)
-        response = get_gemini_response(final_prompt)
-        st.subheader(response)
-
-
+    if uploaded_file is not None and jd.strip() != "":
+        with st.spinner("Analyzing resume with Gemini AI..."):
+            resume_text = input_pdf_text(uploaded_file)
+            final_prompt = input_prompt.format(text=resume_text, jd=jd)
+            response = get_gemini_response(final_prompt)
+            st.subheader("🔍 ATS Evaluation Report")
+            st.write(response)
+    else:
+        st.error("Please provide both the Job Description and a Resume PDF file.")
