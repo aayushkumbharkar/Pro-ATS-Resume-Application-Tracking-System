@@ -17,7 +17,7 @@ genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 # -------------------------------
 @st.cache_data
 def get_gemini_response(input_text):
-    model = genai.GenerativeModel('models/gemini-1.5-flash')
+    model = genai.GenerativeModel('gemini-1.5-flash')
     max_retries = 3
 
     for attempt in range(max_retries):
