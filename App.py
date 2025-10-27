@@ -13,11 +13,11 @@ load_dotenv()
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
 # -------------------------------
-# Gemini Response Function (Flash default)
+# Gemini Response Function (Gemini 2.5 Flash)
 # -------------------------------
 @st.cache_data
 def get_gemini_response(input_text):
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    model = genai.GenerativeModel('gemini-2.5-flash')
     max_retries = 3
 
     for attempt in range(max_retries):
@@ -69,8 +69,8 @@ Job Description:
 # -------------------------------
 # Streamlit UI
 # -------------------------------
-st.title("🧠 Pro ATS — Resume Evaluator (Gemini Flash)")
-st.caption("Powered by Gemini 1.5 Flash — optimized for speed and free-tier usage")
+st.title("🧠 Pro ATS — Resume Evaluator (Gemini 2.5 Flash)")
+st.caption("Powered by Google Gemini 2.5 Flash — fast, reliable, and free-tier friendly")
 
 jd = st.text_area("📄 Paste the Job Description here")
 uploaded_file = st.file_uploader("📎 Upload Your Resume (PDF only)", type="pdf")
@@ -81,7 +81,7 @@ submit = st.button("🚀 Submit for Evaluation")
 # -------------------------------
 if submit:
     if uploaded_file is not None and jd.strip() != "":
-        with st.spinner("Analyzing resume with Gemini 1.5 Flash..."):
+        with st.spinner("Analyzing your resume with Gemini 2.5 Flash..."):
             resume_text = input_pdf_text(uploaded_file)
             final_prompt = input_prompt.format(text=resume_text, jd=jd)
             response = get_gemini_response(final_prompt)
